@@ -25,44 +25,31 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 5000;
 
-// Define the list of allowed origins
-const allowedOrigins = [
-  process.env.API_URL,       // Your deployed frontend from .env on Render
-  'http://localhost:5173'    // Your local development server
-];
+// --- MIDDLEWARE CONFIGURATION ---
 
+// 1. CORS: This should come first
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests if the origin is in our list or if there's no origin (like with Postman)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true, // This allows cookies to be sent
+  origin: process.env.API_URL ,
+  credentials: true,
   optionsSuccessStatus: 200
 };
-
 app.use(cors(corsOptions));
-app.set('trust proxy', 1);
+
 // 2. Parsers for JSON and URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: false })); // Use 'false' for simple forms
 
 // 3. Session Middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET, // Use a specific variable for the session secret
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: true, // secure = true only in production (HTTPS)
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
         httpOnly: true,
-        sameSite:'none', // Allow cross-site cookies if in prod
-        maxAge: 1000 * 60 * 60 * 24
+        maxAge: 1000 * 60 * 60 * 24 // 1 day
     }
 }));
-
 
 // 4. Handlebars View Engine Setup
 app.set('views', path.join(__dirname, 'views'));
