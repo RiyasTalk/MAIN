@@ -46,13 +46,16 @@ const allowedOrigins = [
 ];
 const corsOptions = {
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+   if (!origin || allowedOrigins.includes(origin) || origin === 'null') {
+
+
+        callback(null, true);
+    } else {
+        console.error("❌ Blocked by CORS:", origin); // Log for debugging
+        callback(new Error("Not allowed by CORS"));
+    }
+}
+,
      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   exposedHeaders: ['Content-Length', 'X-Requested-With'],
