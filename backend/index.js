@@ -47,7 +47,7 @@ app.use(session({
     cookie: {
         secure: true, // secure = true only in production (HTTPS)
         httpOnly: true,
-        sameSite:  'lax', // Allow cross-site cookies if in prod
+        sameSite:'none', // Allow cross-site cookies if in prod
         maxAge: 1000 * 60 * 60 * 24
     }
 }));
