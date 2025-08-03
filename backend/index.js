@@ -25,16 +25,27 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const port = process.env.PORT || 5000;
 
-// --- MIDDLEWARE CONFIGURATION ---
+// Define the list of allowed origins
+const allowedOrigins = [
+  process.env.API_URL,       // Your deployed frontend from .env on Render
+  'http://localhost:5173'    // Your local development server
+];
 
-// 1. CORS: This should come first
 const corsOptions = {
-  origin: process.env.API_URL ,
-  credentials: true,
+  origin: function (origin, callback) {
+    // Allow requests if the origin is in our list or if there's no origin (like with Postman)
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true, // This allows cookies to be sent
   optionsSuccessStatus: 200
 };
-app.use(cors(corsOptions));
 
+app.use(cors(corsOptions));
+app.set('trust proxy', 1);
 // 2. Parsers for JSON and URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: false })); // Use 'false' for simple forms
