@@ -1,14 +1,24 @@
 import express from 'express';
 import { ObjectId } from 'mongodb';
 import { get as getDB } from '../config/db.js';
-
+import bcrypt from 'bcrypt';
 const router = express.Router();
+
 
 // HELPER to check for valid MongoDB ObjectId
 const isValidObjectId = (id) => {
     return ObjectId.isValid(id) && String(new ObjectId(id)) === id;
 };
-
+// This function checks if a user is logged in
+const secureRoute = (req, res, next) => {
+    if (req.session.user) {
+        // If a user is found in the session, proceed to the next function (the route handler)
+        next();
+    } else {
+        // If no user is in the session, block the request with a 401 Unauthorized error
+        res.status(401).send({ success: false, error: "Unauthorized. Please log in." });
+    }
+};
 // NEW: Helper function to get the current investment status of a pool
 const getPoolInvestmentStatus = async (db, poolId) => {
     const pool = await db.collection('pools').findOne({ _id: new ObjectId(poolId) });
@@ -25,9 +35,50 @@ const getPoolInvestmentStatus = async (db, poolId) => {
     return { pool, totalInvestment, remainingAmount };
 };
 
+router.post('/login', async (req, res) => {
+    console.log("reached here");
+    
+    const { name, password } = req.body;
+    console.log("Login attempt with name:", name);
+    // Basic validation
+    console.log(password,"length");
+    
+    
+    if (!name || !password) {
+        return res.status(400).send({ success: false, error: "Name and password are required." });
+    }
 
+    try {
+        const db = getDB();
+        const user = await db.collection('userauth').findOne({ name: name });
+
+        // 1. Check if user exists
+        if (!user) {
+            return res.status(401).send({ success: false, error: "Invalid credentials." });
+        }
+
+        // 2. Compare the provided password with the hashed password in the database
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (isMatch) {
+            // 3. If passwords match, create a session for the user
+            req.session.user = {
+                id: user._id,
+                name: user.name,
+            };
+            console.log("User logged in:", req.session.user);
+            
+            return res.status(200).send({ success: true, message: "Login successful.", user:req.session.user });
+        } else {
+            return res.status(401).send({ success: false, error: "Invalid credentials." });
+        }
+
+    } catch (error) {
+        res.status(500).send({ success: false, error: "Server error during login." });
+    }
+});
 // Get all pools
-router.get('/', async (req, res) => {
+router.get('/',secureRoute, async (req, res) => {
     try {
         const db = getDB();
         const pools = await db.collection('pools').find({}).sort({ createdAt: -1 }).toArray();
@@ -55,6 +106,7 @@ router.post('/create', async (req, res) => {
             name,
             totalAmount,
             adminShare: adminShare || 0,
+              initialAdminAmount: adminShare || 0,
             createdAt: new Date()
         };
 
@@ -67,11 +119,13 @@ router.post('/create', async (req, res) => {
 });
 
 // Add a person to a pool
-router.post('/add-person', async (req, res) => {
-    const { poolId, personName, amount } = req.body;
+router.post('/add-person', secureRoute, async (req, res) => {
+    // Get all fields from the request body
+    const { poolId, personName, amount, mobileNumber, address } = req.body;
 
-    if (!poolId || !personName || !amount) {
-        return res.status(400).send({ success: false, error: '`poolId`, `personName`, and `amount` are required.' });
+    // --- Input Validation ---
+    if (!poolId || !personName || !amount || !address) { // Added 'address' (password) to required fields
+        return res.status(400).send({ success: false, error: 'All fields including address (as password) are required.' });
     }
     if (!isValidObjectId(poolId)) {
         return res.status(400).send({ success: false, error: 'Invalid Pool ID format.' });
@@ -83,7 +137,6 @@ router.post('/add-person', async (req, res) => {
     try {
         const db = getDB();
         
-        // --- CHANGED: Validate against over-investment ---
         const { remainingAmount } = await getPoolInvestmentStatus(db, poolId);
 
         if (amount > remainingAmount) {
@@ -93,13 +146,26 @@ router.post('/add-person', async (req, res) => {
             });
         }
         
+        // --- 1. HASH THE PASSWORD ---
+        // Securely hash the 'address' field before saving. 10 is the salt rounds.
+        const hashedPassword = await bcrypt.hash(address, 10);
+
+        // --- 2. Build the person object with the HASHED password ---
         const person = {
             poolId: new ObjectId(poolId),
             personName,
-            amount,
-            createdAt: new Date()
+            amount: amount,
+            initialAmount: amount,
+            createdAt: new Date(),
+            password: hashedPassword // Save the secure hash, not the plain text
         };
 
+        // Add optional fields only if they exist
+        if (mobileNumber) {
+            person.mobileNumber = mobileNumber;
+        }
+        
+        // --- Insert into Database ---
         await db.collection('people').insertOne(person);
         res.status(201).send({ success: true, message: 'Person added to pool successfully.' });
     } catch (error) {
@@ -107,9 +173,8 @@ router.post('/add-person', async (req, res) => {
         res.status(500).send({ success: false, error: error.message || "Internal server error." });
     }
 });
-
 // Admin adds more shares to a pool
-router.post('/admin/add-shares', async (req, res) => {
+router.post('/admin/add-shares',secureRoute, async (req, res) => {
     const { poolId, extraAmount } = req.body;
 
     if (!poolId || !extraAmount) {
@@ -145,10 +210,30 @@ router.post('/admin/add-shares', async (req, res) => {
         res.status(500).send({ success: false, error: error.message || "Internal server error." });
     }
 });
+// In your backend auth router file
 
+// Checks if a user is currently logged in via session
+router.get('/status', (req, res) => {
+    if (req.session.user) {
+        res.status(200).send({ success: true, user: req.session.user });
+    } else {
+        res.status(200).send({ success: false, user: null });
+    }
+});
+
+// Logs the user out
+router.post('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            return res.status(500).send({ success: false, error: 'Could not log out.' });
+        }
+        res.clearCookie('connect.sid'); // The default session cookie name
+        res.status(200).send({ success: true, message: 'Logged out successfully.' });
+    });
+});
 
 // --- NEW: Admin buys out an investor's share ---
-router.post('/admin/buyout', async (req, res) => {
+router.post('/admin/buyout',secureRoute, async (req, res) => {
     const { poolId, personId, buyoutAmount } = req.body;
 
     // --- Basic Input Validation ---
@@ -217,7 +302,7 @@ router.post('/admin/buyout', async (req, res) => {
 
 
 // Get a detailed summary of a pool
-router.get('/:poolId/summary', async (req, res) => {
+router.get('/:poolId/summary', secureRoute,async (req, res) => {
     const { poolId } = req.params;
 
     if (!isValidObjectId(poolId)) {
@@ -229,7 +314,10 @@ router.get('/:poolId/summary', async (req, res) => {
         
         // --- CHANGED: Use the helper to get initial data ---
         const { pool, totalInvestment, remainingAmount } = await getPoolInvestmentStatus(db, poolId);
-        
+const poolinitialAdminFund = await db.collection('pools').findOne({ _id: new ObjectId(poolId) });
+const initialFund = poolinitialAdminFund?.initialAdminAmount ?? 0;
+
+
         const people = await db.collection('people').find({ poolId: new ObjectId(poolId) }).toArray();
         // --- NEW: Fetch buyout history ---
         const buyoutHistory = await db.collection('buyouts').find({ poolId: new ObjectId(poolId) }).toArray();
@@ -252,7 +340,8 @@ router.get('/:poolId/summary', async (req, res) => {
                 _id: pool._id,
                 name: pool.name,
                 totalAmount: pool.totalAmount,
-                createdAt: pool.createdAt
+                createdAt: pool.createdAt,
+                initialFund : initialFund
             },
             investmentStatus: {
                 totalInvestment,
@@ -265,7 +354,8 @@ router.get('/:poolId/summary', async (req, res) => {
             },
             investors: peopleWithShares.filter(p => p.amount > 0), // Only show active investors
             investorCount: people.filter(p => p.amount > 0).length,
-            buyoutHistory: buyoutHistory // --- NEW ---
+            buyoutHistory: buyoutHistory, // --- NEW ---
+          
         };
 
         res.status(200).send({ success: true, summary });
@@ -280,7 +370,7 @@ router.get('/:poolId/summary', async (req, res) => {
 // ... (other routes like /admin/buyout) ...
 
 // NEW: Calculate profit distribution for a pool
-router.post('/:poolId/calculate-profit', async (req, res) => {
+router.post('/:poolId/calculate-profit', secureRoute,async (req, res) => {
     const { poolId } = req.params;
     const { profitAmount } = req.body;
 
@@ -350,5 +440,38 @@ router.post('/:poolId/calculate-profit', async (req, res) => {
     }
 });
 
+// Add this new route to your existing routes/pools.js file
 
+// NEW: Get all people/investors for a specific pool
+// In your backend router file (e.g., routes/mainRouter.js)
+
+// ... (your other routes)
+
+// GET all investors for a specific pool
+router.get('/:poolId/investordetails', secureRoute, async (req, res) => {
+    const { poolId } = req.params;
+
+    // Validate the Pool ID
+    if (!isValidObjectId(poolId)) {
+        return res.status(400).send({ success: false, error: 'Invalid Pool ID format.' });
+    }
+
+    try {
+        const db = getDB();
+        
+        // Find all documents in the 'people' collection that match the poolId
+        const investors = await db.collection('people')
+            .find({ poolId: new ObjectId(poolId) })
+            .sort({ createdAt: 1 }) // Optional: sort by creation date
+            .toArray();
+
+        res.status(200).send({ success: true, data: investors });
+
+    } catch (error) {
+        console.error("Error fetching investor details:", error);
+        res.status(500).send({ success: false, error: "Internal server error." });
+    }
+});
+
+// ... (rest of your routes)
 export default router;
