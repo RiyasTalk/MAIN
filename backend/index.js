@@ -4,9 +4,9 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import session from 'express-session';
-import MongoStore from 'connect-mongo'; // NEW: For persistent sessions
-import helmet from 'helmet'; // NEW: For security headers
-import rateLimit from 'express-rate-limit'; // NEW: For preventing brute-force attacks
+import MongoStore from 'connect-mongo';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 // These three are needed for Handlebars and __dirname
 import path from 'path';
@@ -14,8 +14,8 @@ import { fileURLToPath } from 'url';
 import exphbs from 'express-handlebars';
 
 import { connect } from './config/db.js';
-import poolRoute from './routes.js/pool.js';
-import lookupRouter from './routes.js/lookup.js';
+import poolRoute from './routes/pool.js';
+import lookupRouter from './routes/lookup.js';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -29,21 +29,24 @@ const port = process.env.PORT || 5000;
 
 // --- CRITICAL PRODUCTION SETTINGS ---
 
-// NEW: Trust the reverse proxy on Render
-// This is essential for secure cookies to work correctly.
+// Trust the reverse proxy on Render (essential for secure cookies)
 app.set('trust proxy', 1);
 
 // --- MIDDLEWARE CONFIGURATION ---
 
 // 1. Security Headers with Helmet
-// NEW: Sets various HTTP headers to protect against common web vulnerabilities.
 app.use(helmet());
 
-// 2. Robust CORS for Production and Development
-// CHANGED: Allows requests from your deployed site and localhost.
-const allowedOrigins = [process.env.API_URL, 'http://localhost:5173'];
+// 2. Robust CORS for both React Frontend and HBS Pages
+const allowedOrigins = [
+    process.env.API_URL,        // Your React Frontend URL
+    process.env.BACKEND_URL,    // Your Backend's own URL (for HBS)
+    'http://localhost:5173',    // Your local dev environment
+    'http://localhost:5000'     // Your local backend URL
+];
 const corsOptions = {
     origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);
         } else {
@@ -59,8 +62,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// 4. Session Middleware with Persistent Store
-// CHANGED: Replaced default MemoryStore with MongoStore.
+// 4. Session Middleware with Persistent MongoStore
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
@@ -72,7 +74,6 @@ app.use(
             ttl: 14 * 24 * 60 * 60, // 14 days
         }),
         cookie: {
-            // CHANGED: Dynamic settings for secure cookies
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24, // 1 day
@@ -82,16 +83,15 @@ app.use(
 );
 
 // 5. Rate Limiting to prevent brute-force attacks
-// NEW: Limits API requests to prevent abuse.
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per window
+    max: 100, // Limit each IP to 100 requests per window (for API routes)
     standardHeaders: true,
     legacyHeaders: false,
 });
-app.use('/api', apiLimiter); // Apply limiter to all API routes
+app.use('/api', apiLimiter); // Apply limiter only to API routes
 
-// 6. Handlebars View Engine Setup (No changes needed)
+// 6. Handlebars View Engine Setup
 app.set('views', path.join(__dirname, 'views'));
 app.engine(
     'hbs',
@@ -122,7 +122,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api/pool', poolRoute);
 app.use('/lookup', lookupRouter);
 
-// --- NEW: CENTRALIZED ERROR HANDLING ---
+// --- CENTRALIZED ERROR HANDLING ---
 // This must be the LAST middleware.
 app.use((err, req, res, next) => {
     console.error(err.stack);
@@ -137,7 +137,7 @@ connect((err) => {
     } else {
         console.log('✅ Connected to MongoDB successfully');
         app.listen(port, () => {
-            console.log(`🚀 Server started at http://localhost:${port}`);
+            console.log(`🚀 Server started on port ${port}`);
         });
     }
 });
