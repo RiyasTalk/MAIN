@@ -90,7 +90,7 @@ router.get('/',secureRoute, async (req, res) => {
 });
 
 // Create a pool
-router.post('/create',secureRoute, async (req, res) => {
+router.post('/create', async (req, res) => {
     const { name, totalAmount, adminShare } = req.body;
 
     if (!name || !totalAmount) {
