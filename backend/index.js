@@ -53,6 +53,9 @@ const corsOptions = {
             callback(new Error('Not allowed by CORS'));
         }
     },
+     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
     credentials: true,
     optionsSuccessStatus: 200,
 };
@@ -71,13 +74,13 @@ app.use(
         store: MongoStore.create({
             mongoUrl: process.env.MONGO_URI,
             collectionName: 'sessions',
-            ttl: 14 * 24 * 60 * 60, // 14 days
+            ttl: 1 * 24 * 60 * 60, // 14 days
         }),
         cookie: {
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
             maxAge: 1000 * 60 * 60 * 24, // 1 day
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            sameSite:  'none' 
         },
     })
 );
