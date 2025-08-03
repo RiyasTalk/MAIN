@@ -1,0 +1,42 @@
+2025-08-03T17:44:19.103332931Z ==> Cloning from https://github.com/RiyasTalk/MAIN
+2025-08-03T17:44:19.53874854Z ==> Checking out commit 453a7e7fbaff5acadc37bc1362f669cb2357321d in branch main
+2025-08-03T17:44:20.471350402Z ==> Downloading cache...
+2025-08-03T17:44:29.454239824Z ==> Transferred 63MB in 7s. Extraction took 1s.
+2025-08-03T17:44:31.271032948Z ==> Using Node.js version 22.16.0 (default)
+2025-08-03T17:44:31.296913437Z ==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+2025-08-03T17:44:31.362073618Z ==> Running build command 'npm install'...
+2025-08-03T17:44:31.905248887Z 
+2025-08-03T17:44:31.905277658Z up to date, audited 143 packages in 479ms
+2025-08-03T17:44:31.905282518Z 
+2025-08-03T17:44:31.905286288Z 29 packages are looking for funding
+2025-08-03T17:44:31.905295348Z   run `npm fund` for details
+2025-08-03T17:44:31.906108777Z 
+2025-08-03T17:44:31.906124067Z found 0 vulnerabilities
+2025-08-03T17:44:32.221536937Z ==> Uploading build...
+2025-08-03T17:44:38.874058999Z ==> Uploaded in 5.7s. Compression took 0.9s
+2025-08-03T17:44:38.888338173Z ==> Build successful 🎉
+2025-08-03T17:44:40.471830822Z ==> Deploying...
+2025-08-03T17:44:52.085207923Z ==> Running ' npm start'
+2025-08-03T17:44:53.080022634Z 
+2025-08-03T17:44:53.080047284Z > backend@1.0.0 start
+2025-08-03T17:44:53.080050554Z > node ./index.js
+2025-08-03T17:44:53.080053014Z 
+2025-08-03T17:44:56.476257096Z [dotenv@17.2.1] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+2025-08-03T17:44:56.478215475Z Warning: connect.session() MemoryStore is not
+2025-08-03T17:44:56.478225095Z designed for a production environment, as it will leak
+2025-08-03T17:44:56.478228055Z memory, and will not scale past a single process.
+2025-08-03T17:44:59.225756761Z ✅ Connected to MongoDB successfully
+2025-08-03T17:44:59.22772472Z 🚀 Server started at http://localhost:5000
+2025-08-03T17:45:01.125743452Z ==> Your service is live 🎉
+2025-08-03T17:45:01.15201935Z ==> 
+2025-08-03T17:45:01.179109568Z ==> ///////////////////////////////////////////////////////////
+2025-08-03T17:45:01.203558046Z ==> 
+2025-08-03T17:45:01.227712464Z ==> Available at your primary URL https://main-backend-pxpf.onrender.com
+2025-08-03T17:45:01.251686403Z ==> 
+2025-08-03T17:45:01.276697261Z ==> ///////////////////////////////////////////////////////////
+2025-08-03T17:45:52.537972683Z reached here
+2025-08-03T17:45:52.538075905Z Login attempt with name: riyas
+2025-08-03T17:45:52.538099636Z riyas@123@123 length
+2025-08-03T17:45:53.078665642Z User logged in: { id: new ObjectId('688f2b95d5eb5c90bb86b01f'), name: 'riyas' }
+2025-08-03T17:50:08.754033538Z ==> Detected service running on port 5000
+2025-08-03T17:50:08.897679018Z ==> Docs on specifying a port: https://render.com/docs/web-services#port-binding

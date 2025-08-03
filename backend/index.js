@@ -41,15 +41,17 @@ app.use(express.urlencoded({ extended: false })); // Use 'false' for simple form
 
 // 3. Session Middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET, // Use a specific variable for the session secret
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        secure: true, // secure = true only in production (HTTPS)
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24 // 1 day
+        sameSite:  'lax', // Allow cross-site cookies if in prod
+        maxAge: 1000 * 60 * 60 * 24
     }
 }));
+
 
 // 4. Handlebars View Engine Setup
 app.set('views', path.join(__dirname, 'views'));
