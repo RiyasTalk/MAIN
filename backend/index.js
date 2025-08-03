@@ -29,10 +29,10 @@ const port = process.env.PORT || 5000;
 
 // 1. CORS: This should come first
 const corsOptions = {
-  origin: process.env.API_URL ,
+  origin:process.env.API_URL,
   credentials: true,
-  optionsSuccessStatus: 200
-};
+  optionsSuccessStatus: 200,
+   sameSite:'none' };
 app.use(cors(corsOptions));
 
 // 2. Parsers for JSON and URL-encoded data
