@@ -14,8 +14,8 @@ import { fileURLToPath } from 'url';
 import exphbs from 'express-handlebars';
 
 import { connect } from './config/db.js';
-import poolRoute from './routes/pool.js';
-import lookupRouter from './routes/lookup.js';
+import poolRoute from './routes.js/pool.js';
+import lookupRouter from './routes.js/lookup.js';
 
 // Load environment variables from .env file
 dotenv.config();
