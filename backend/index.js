@@ -120,7 +120,7 @@ app.use(express.static(reactDistPath));
 
 // For all other GET requests, serve the index.html file
 app.get(/^(?!\/api|\/lookup).*/, (req, res) => {
-    res.sendFile(path.join(projectRoot, 'frontend', 'dist', 'index.html'));
+    res.sendFile(path.join(projectRoot, 'frontend', 'vite-project', 'dist', 'index.html'));
 });
 // --- CENTRALIZED ERROR HANDLING ---
 app.use((err, req, res, next) => {
