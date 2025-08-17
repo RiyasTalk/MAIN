@@ -129,11 +129,10 @@ app.use('/lookup', lookupRouter);
 // --- SERVE REACT FRONTEND ---
 // The following block must be placed AFTER all API and static asset routes
 // to ensure that API calls are not mistakenly routed to the frontend app.
-const projectRoot = path.resolve();
-app.use(express.static(path.join(__dirname, "../frontend/vite-project/dist")));
-
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "../frontend/vite-project/dist/index.html"));
+const reactDistPath = path.join(__dirname, "../frontend/vite-project/dist");
+app.use(express.static(reactDistPath));
+app.get(/^\/(?!api|lookup).*/, (req, res) => {
+  res.sendFile(path.join(reactDistPath, "index.html"));
 });
 
 // --- CENTRALIZED ERROR HANDLING ---
