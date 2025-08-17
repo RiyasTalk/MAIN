@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 // Import our new auth and protected route components
 import { AuthProvider } from './AuthContext.jsx';
@@ -31,7 +31,7 @@ export default function App() {
                     <Routes>
                         {/* 2. Create a public route for the login page */}
                         <Route path="/login" element={<LoginPage showToast={showToast} />} />
-
+      <Route path="*" element={<Navigate  to="/" replace />}></Route>
                         {/* 3. Wrap your Dashboard in the ProtectedRoute component */}
                         <Route
                             path="/"

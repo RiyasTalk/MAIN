@@ -87,9 +87,11 @@ app.use('/api/pool', poolRoute);
 app.use('/lookup', lookupRouter);
 
 // Catch-all: React SPA
+// Catch-all route for React (after your API routes!)
 app.get('*', (req, res) => {
   res.sendFile(path.join(projectRoot, 'frontend', 'dist', 'index.html'));
 });
+
 
 // Error handler
 app.use((err, req, res, next) => {

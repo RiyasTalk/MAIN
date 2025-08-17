@@ -290,10 +290,16 @@ export const InvestorDetailsModal = ({ poolId, poolName, isOpen, onClose }) => {
                           </div>
                        
                         </th>
-                           <div className="flex items-center gap-1">
+                          <th>
+                            <div className="flex items-center gap-1">
                             Initial Amount
-                            
                           </div>
+                            </th> 
+                          <th>
+                              <div className="flex items-center gap-1">
+                            Password
+                          </div> </th>  
+                          
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -327,6 +333,11 @@ export const InvestorDetailsModal = ({ poolId, poolName, isOpen, onClose }) => {
                     <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-semibold text-green-600">
                               {formatCurrency(person.initialAmount || 0)}
+                            </div>
+                          </td>
+                          <td>
+                               <div className="text-sm font-semibold text-red-600">
+                              {(person.password )}
                             </div>
                           </td>
                         </tr>
