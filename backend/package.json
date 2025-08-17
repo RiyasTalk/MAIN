@@ -6,7 +6,7 @@
     "dev": "nodemon ./index.js",
     "start": "node ./index.js",
     "pm2": "pm2 start ./index.js ",
-    "build":"npm install && npm install --prefix ./frontend && npm run build --prefix ./frontend"
+    "build":"npm install && npm install --prefix ./frontend/vite-project && npm run build --prefix ./frontend/vite-project"
   },
   "keywords": [],
   "author": "",
