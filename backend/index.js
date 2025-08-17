@@ -112,16 +112,34 @@ app.use('/lookup', lookupRouter);
 
 // --- SERVE REACT FRONTEND ---
 // The following two lines must be placed AFTER all other API routes.
+
+
+// Serve static assets from the React build directory
+// backend/app.js (partial)
+
+// ... (existing imports and middleware setup)
+
+// --- SERVE REACT FRONTEND ---
+// The following block must be at the very top of your routing logic,
+// before any other routes, including API routes. This ensures that
+// all static assets are served first.
 const projectRoot = path.resolve(__dirname, '..');
 const reactDistPath = path.join(projectRoot, 'frontend', 'vite-project', 'dist');
 
-// Serve static assets from the React build directory
+// Serve all static assets from the React build directory
 app.use(express.static(reactDistPath));
 
+// --- ROUTES ---
+// Place your API routes AFTER the static file server
+app.use('/api/pool', poolRoute);
+app.use('/lookup', lookupRouter);
+
 // For all other GET requests, serve the index.html file
-app.get(/^(?!\/api|\/lookup).*/, (req, res) => {
-    res.sendFile(path.join(projectRoot, 'frontend', 'vite-project', 'dist', 'index.html'));
+app.get(/^(?!\/api|\/lookup|\/assets).*/, (req, res) => {
+    res.sendFile(path.join(reactDistPath, 'index.html'));
 });
+
+// ... (existing error handler and server start)
 // --- CENTRALIZED ERROR HANDLING ---
 app.use((err, req, res, next) => {
     console.error(err.stack);
