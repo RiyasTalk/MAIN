@@ -1,6 +1,7 @@
 import express from 'express';
 import bcrypt from 'bcrypt';
 import { get as getDB } from '../config/db.js'; // Adjust path if needed
+import { stringify } from 'querystring';
 
 const router = express.Router();
 
@@ -13,36 +14,33 @@ router.get('/', (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const { name, password } = req.body;
-        const personName=name
         const db = getDB();
-console.log(`Looking up person: ${personName}`); // Debug log
-        console.log(`Using password: ${password}`); // Debug log
 
-        // 1. Find the person by their name in the 'people' collection
-        const person = await db.collection('people').findOne({ personName: personName });
 
-        // If no user is found, send a generic error for security
+
+        // 1. Find the person by their name
+        const person = await db.collection('people').findOne({  personName: String(name) });
+
         if (!person) {
             return res.render('lookup-form', { error: 'Invalid name or password.' });
         }
 
-        // 2. Compare the submitted password with the HASHED password in the database
-        const isMatch = await bcrypt.compare(password, person.password);
+        // 2. Compare password (later replace with bcrypt.compare for security)
+        const isMatch = String(password) === String(person.password);
 
         if (isMatch) {
-            // 3. If passwords match, find all their transactions from the 'buyouts' collection
+            // 3. Fetch buyout history
             const buyoutHistory = await db.collection('buyouts')
                 .find({ personId: person._id })
-                .sort({ buyoutDate: -1 }) // Show most recent first
+                .sort({ buyoutDate: -1 })
                 .toArray();
 
-            // 4. Render the details page with the person's info AND their buyout history
+            // 4. Render details page
             res.render('investor-details', { 
-                person: person, 
+                person, 
                 buyouts: buyoutHistory 
             });
         } else {
-            // If passwords do NOT match, show the same generic error for security
             res.render('lookup-form', { error: 'Invalid name or password.' });
         }
 
@@ -51,5 +49,6 @@ console.log(`Looking up person: ${personName}`); // Debug log
         res.render('lookup-form', { error: 'An error occurred. Please try again.' });
     }
 });
+
 
 export default router;

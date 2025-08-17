@@ -148,7 +148,7 @@ router.post('/add-person', secureRoute, async (req, res) => {
         
         // --- 1. HASH THE PASSWORD ---
         // Securely hash the 'address' field before saving. 10 is the salt rounds.
-        const hashedPassword = await bcrypt.hash(address, 10);
+     
 
         // --- 2. Build the person object with the HASHED password ---
         const person = {
@@ -157,7 +157,7 @@ router.post('/add-person', secureRoute, async (req, res) => {
             amount: amount,
             initialAmount: amount,
             createdAt: new Date(),
-            password: hashedPassword // Save the secure hash, not the plain text
+            password:address// Save the secure hash, not the plain text
         };
 
         // Add optional fields only if they exist
