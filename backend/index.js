@@ -28,28 +28,22 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // --- CRITICAL PRODUCTION SETTINGS ---
-
-// Trust the reverse proxy on Render (essential for secure cookies)
 app.set('trust proxy', 1);
 
 // --- MIDDLEWARE CONFIGURATION ---
-
-// 1. Security Headers with Helmet
 app.use(helmet());
-
-// 2. Robust CORS for both React Frontend and HBS Pages
 const allowedOrigins = [
-    process.env.API_URL,        // Your React Frontend URL
-    process.env.BACKEND_URL,    // Your Backend's own URL (for HBS)
-    'http://localhost:5173',    // Your local dev environment
-    'http://localhost:5000'     // Your local backend URL
+    process.env.API_URL,
+    process.env.BACKEND_URL,
+    'http://localhost:5173',
+    'http://localhost:5000'
 ];
 const corsOptions = {
     origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin) || origin === 'null') {
         callback(null, true);
     } else {
-        console.error("❌ Blocked by CORS:", origin); // Log for debugging
+        console.error("❌ Blocked by CORS:", origin);
         callback(new Error("Not allowed by CORS"));
     }
 },
@@ -60,12 +54,8 @@ const corsOptions = {
     optionsSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-
-// 3. Parsers for JSON and URL-encoded data
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// 4. Session Middleware with Persistent MongoStore
 app.use(
     session({
         secret: process.env.SESSION_SECRET,
@@ -74,26 +64,22 @@ app.use(
         store: MongoStore.create({
             mongoUrl: process.env.MONGO_URI,
             collectionName: 'sessions',
-            ttl: 1 * 24 * 60 * 60, // 1 day
+            ttl: 1 * 24 * 60 * 60,
         }),
         cookie: {
             secure: true,
             httpOnly: false,
-            maxAge: 1000 * 60 * 60 * 24, // 1 day
+            maxAge: 1000 * 60 * 60 * 24,
         },
     })
 );
-
-// 5. Rate Limiting to prevent brute-force attacks
 const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per window (for API routes)
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     standardHeaders: true,
     legacyHeaders: false,
 });
-app.use('/api', apiLimiter); // Apply limiter only to API routes
-
-// 6. Handlebars View Engine Setup
+app.use('/api', apiLimiter);
 app.set('views', path.join(__dirname, 'views'));
 app.engine(
     'hbs',
@@ -116,8 +102,6 @@ app.engine(
     })
 );
 app.set('view engine', 'hbs');
-
-// 7. Static Files (CSS, client-side JS)
 app.use(express.static(path.join(__dirname, 'public')));
 
 
@@ -127,27 +111,28 @@ app.use('/lookup', lookupRouter);
 
 
 // --- SERVE REACT FRONTEND ---
-// The following block must be placed AFTER all API and static asset routes
-// to ensure that API calls are not mistakenly routed to the frontend app.
-const reactDistPath = path.join(__dirname, "../frontend/vite-project/dist");
-app.use(express.static(reactDistPath));
-app.get(/^\/(?!api|lookup).*/, (req, res) => {
-  res.sendFile(path.join(reactDistPath, "index.html"));
-});
+// The following two lines must be placed AFTER all other API routes.
+const projectRoot = path.resolve(__dirname, '..');
+const reactDistPath = path.join(projectRoot, 'frontend', 'vite-project', 'dist');
 
+// Serve static assets from the React build directory
+app.use(express.static(reactDistPath));
+
+// For all other GET requests, serve the index.html file
+app.get(/^(?!\/api|\/lookup).*/, (req, res) => {
+    res.sendFile(path.join(projectRoot, 'frontend', 'dist', 'index.html'));
+});
 // --- CENTRALIZED ERROR HANDLING ---
-// This must be the LAST middleware.
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ success: false, message: 'An unexpected error occurred!' });
 });
 
-
 // --- START SERVER ---
 connect((err) => {
     if (err) {
         console.log('❌ Failed to connect to MongoDB:', err);
-        process.exit(1); // Exit process on critical connection failure
+        process.exit(1);
     } else {
         console.log('✅ Connected to MongoDB successfully');
         app.listen(port, () => {
